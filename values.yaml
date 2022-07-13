@@ -1,0 +1,116 @@
+cluster:
+  name: smcdu2
+  git_url: https://github.com/nsatsia/cluster-smcdu2.lab.diktio.net.git
+  api_vip: 198.19.129.212
+  ingress_vip: 198.19.129.212
+  default_router: 198.19.129.254
+  machineNetwork: 198.19.129.0/24
+  clusternetwork:
+    cidr: 10.128.0.0/14
+    hostPrefix: 23
+  servicenetwork: 172.30.0.0/16
+  cluster_labels:
+  - ran.openshift.io/test1: 'test label smcdu2'
+  cluster_annotations:
+  - kubernetes.io/description: 'test annotation smcdu2'
+  #################################################
+  ## Optional override parameters for local cluster
+  #
+  # ssh_key is the SSH public key used to access the nodes
+  # It is set at the global/environment level with global.ai.ssh_key but it can be overridden on a 
+  # per cluster basis by setting it here
+  #ssh_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDkn6tx/IfpY1Eb9QVBsr2Q5WHDGSDTbysuW+2OiifkVfrP/0zVjo7pe1bBxUaEID0rWN6CC1VTwS4GX6cZhGr0wlgT8TUN+rHutxL0Tawqy+yTzqYJ+Vfeilz3CfdAt06QJL9sy57RrlsSTIrlU8CijJTght+v57tmWyKDt2mNJL/5WX9PG40mgXqQ+tfFn+cluOc3V+XcK5dx89dS3oD3Wzn/FmTdwKm8+bnZapWBz7YJf3BU5AL+E82vRCIyZ2MnzbjJ33nTgEF/NdKLEPtyp1dT3Lb0mGB8duj0CFtA3u7CwVi/KMp9JdssN3mN8mGtPE+NwYKsbDA1/++jRCqX login'
+  #
+  # Operator CatalogSource to use, i.e. select the mirror or Direct to Red Hat
+  # Red Hat Direct is "redhat-operators"
+  # Local mirror is "redhat-operator-index"
+  #operator_source: redhat-operator-index
+  #  
+  # Defines if ODF/OCS will be using internal rook/ceph  or external
+  # Uncomment the desired setting
+  default_storage_class: "odf-lvm-vg1"
+  #default_storage_class: "ocs-external-storagecluster-ceph-rbd"
+  #default_storage_class: "ocs-storagecluster-ceph-rbd"
+  #
+  # OCP install version defined in the AgentClusterInstall CRD for each target cluster
+  # Must match anm entry in the list below defined in Hive ClusterImageSet CRDs
+  #
+  install_mirror_name: "openshift-v4.10.20-mirror"
+  #################################################
+  #
+  # Some tuning for LSO volume set on this cluster
+  lso:
+    maxdevice: 10
+    minsize: 1Gi
+  #
+  # This node section defines only the "masters" for this blueprint for a 3-node compact cluster
+  # If additional workers are required then they should be defined in the /workers/* directory structure
+  nodes:
+    masters:
+    # Name of master node
+    - name: "master1"
+      # Site name for this master
+      # Assuming will have 1 site for the control/master nodes and possibly additional workers
+      # Other/additional sites will be for remote workers, L3 routed away from  control node site.
+      site: site1
+      #
+      # Initial role of node, should not change from master
+      role: master
+      #
+      # hint to try and deploy the RHCOS tro the correct disk
+      # for given platform including VMs
+      boot_dev_hint: /dev/nvme0n1
+
+      #
+      # lso flag if node is to be labeled for LSO
+      lso: "true"
+      #
+      # OCS/ODF flag if node is to be labeled for OCS internal
+      ocs: "true"
+      #
+      # List of labels to be applied to the node
+      node_labels:
+        kubernetes.io/description: 'test label ran'
+      #
+      # List of annotations to be applied to the node
+      node_annotations:
+        kubernetes.io/description: 'test annotation ran'
+      #
+      # Static IP to be applied to either the bond interface (if enabled) or the 1st interface in the "interfaces" list
+      IP: "198.19.129.212"
+      prefix_length: 24
+      # 
+      # OPTIONAL bond definition
+      # Set "bond_enable" to true if bond is required else false
+      # Assumes 1st "bond_members" interface(s) in "interface list" forms the bond
+      bond_enable: "false"
+      bond_name: bond0
+      bond_members: "2"
+      bond_mode: active-backup
+      #
+      # MTU applied to all interfaces
+      int_mtu: 9000
+      #
+      # List of interfaces and MAC addresses on the node
+      # Order is important as it is used to determine the interface(s) used for the cluster network
+      # If bond_enable is "false" then the 1st interface will be used for the cluster network
+      # If bond_enable is "true" then the first "bond_members" of interface(s) will form the bond for the cluster network
+      # Remaining interfaces could be in any order and will be configured with MTU plus IPv4 and IPv6 disabled
+      interfaces:
+      - name: "enp1s0f0"
+        mac: "3c:fd:fe:35:65:80"
+      - name: "enp1s0f1"
+        mac: "3c:fd:fe:35:65:82"
+      - name: "enp3s0f0"
+        mac: "40:a6:b7:95:b2:9c"
+      - name: "enp3s0f1"
+        mac: "40:a6:b7:95:b2:9d"
+      #- name: "eno1"
+      #  mac: ""
+      #- name: "eno2"
+      #  mac: ""
+      #
+      # BMC access information
+      bmc_username: ADMIN
+      bmc_password: Redhat01
+      bmc_address: redfish-virtualmedia+https://198.19.142.12/redfish/v1/Systems/1
